@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Universal URL Detector</title>
+<style>
+body { font-family: Arial; background:#f5f7fa; padding:20px; }
+h2 { color:#333; }
+input { width:400px; padding:10px; margin-right:10px; }
+button { padding:10px 15px; cursor:pointer; }
+#resultBox { margin-top:20px; padding:15px; border-radius:8px; max-width:600px; }
+.safe { background:#e0f9e0; color:#2d7a2d; }
+.suspicious { background:#fff3cd; color:#856404; }
+.malicious { background:#f8d7da; color:#721c24; }
+ul { margin-top:10px; }
+</style>
+</head>
+<body>
+<h2>🔍 Universal URL Detector</h2>
+<input type="text" id="urlInput" placeholder="Enter any URL">
+<button onclick="checkURL()">Check URL</button>
+<div id="resultBox"></div>
+
+<script>
+const SAFE_DOMAINS = [
+    "google.com","github.com","openai.com","chatgpt.com","microsoft.com",
+    "iitb.ac.in","piet.co.in","mit.edu"
+];
+const TEMP_DOMAINS = ["bit.ly","t.co","tinyurl","ngrok","is.gd","shorturl.at"];
+const SUSPICIOUS_KEYWORDS = ["login","signin","verify","banking","secure","update info","password"];
+
+function checkURL() {
+    let url = document.getElementById("urlInput").value.trim();
+    if(!url.startsWith("http")) url = "http://" + url;
+    const resBox = document.getElementById("resultBox");
+    let messages = [];
+
+    // Whitelist check
+    if(SAFE_DOMAINS.some(d => url.includes(d))) {
+        resBox.innerHTML = "<h3>SAFE</h3><ul><li>Domain is in trusted whitelist</li></ul>";
+        resBox.className = "safe";
+        return;
+    }
+
+    // Temporary domains
+    const tempFound = TEMP_DOMAINS.filter(d => url.includes(d));
+    if(tempFound.length) messages.push(`Uses temporary/shortened domain: ${tempFound.join(", ")}`);
+
+    // URL pattern checks
+    if(url.includes("@")) messages.push("URL contains '@' which may hide real domain");
+    if(url.length > 75) messages.push("URL length is unusually long");
+    if(/[^a-zA-Z0-9-._:/?&=%]/.test(url)) messages.push("URL contains unusual symbols");
+
+    // Keywords in URL
+    if(SUSPICIOUS_KEYWORDS.some(k => url.toLowerCase().includes(k))) messages.push("URL contains suspicious keywords like login/password");
+
+    // Determine status
+    let status = "safe";
+    if(tempFound.length || messages.some(m => m.toLowerCase().includes("suspicious"))) status = "malicious";
+    else if(messages.length) status = "suspicious";
+
+    resBox.innerHTML = `<h3>${status.toUpperCase()}</h3><ul>${messages.length ? messages.map(m => `<li>${m}</li>`).join("") : "<li>No suspicious patterns detected</li>"}</ul>`;
+    resBox.className = status;
+}
+</script>
+</body>
+</html>
